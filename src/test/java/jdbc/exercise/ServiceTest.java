@@ -1,5 +1,7 @@
 package jdbc.exercise;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 
 import org.junit.Before;
@@ -46,5 +48,10 @@ public class ServiceTest {
 		service.printTable("employee", 1, 10);
 		service.printTable("project", 1, 10);
 		service.printTable("employee2project", 7, 25);
+	}
+	
+	@Test
+	public void insertDataToTableFromCSV() throws ClassNotFoundException, SQLException, IOException {
+		service.storeData(new File("src\\test\\resources\\insert-MyTab.csv"));
 	}
 }

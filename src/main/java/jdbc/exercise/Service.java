@@ -37,7 +37,6 @@ public class Service {
 		try (Connection con = DriverManager
 				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
 
-			TextTable textTable;
 			try (PreparedStatement ps = con.prepareStatement("select * from " + tabName + " limit ? offset ?")) {
 				if (toRowIdx != -1) {
 					ps.setInt(1, toRowIdx);
@@ -48,7 +47,7 @@ public class Service {
 				ps.setInt(2, fromRowIdx - 1);
 
 				try (ResultSet rs = ps.executeQuery()) {
-					textTable = new TextTable(getColumnHeader(rs), getTableData(rs));
+					TextTable textTable = new TextTable(getColumnHeader(rs), getTableData(rs));
 					textTable.printTable();
 				}
 			}
@@ -91,20 +90,23 @@ public class Service {
 		try (Connection con = DriverManager
 				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
 
-			FileReader fileReader = new FileReader(file);
-			CSVFormat csvFileFormat = CSVFormat.DEFAULT.withHeader("ID", "AGE", "NAME");
-			CSVParser csvFileParser = new CSVParser(fileReader, csvFileFormat);
-	        
-			try (PreparedStatement ps = con.prepareStatement("INSERT INTO " + file.getName() + " (ID, AGE, NAME) VALUES(?, ?, ?)")) {
+			String tableName = file.getName().split("\\-|\\.")[1].toLowerCase();	        
+			CSVParser csvFileParser = new CSVParser(new FileReader(file), CSVFormat.MYSQL.withHeader("ID", "AGE", "NAME"));
+			
+			try (PreparedStatement ps = con.prepareStatement("INSERT INTO " + tableName + " (ID, AGE, NAME) VALUES(?, ?, ?);")) {
 				con.setAutoCommit(false);
-				for (CSVRecord csvRecord : csvFileParser.getRecords()) {
-					ps.setInt(1, Integer.parseInt(csvRecord.get("ID")));
-					ps.setString(2, csvRecord.get("AGE"));
-					ps.setString(3, csvRecord.get("NAME"));
+				
+				List<CSVRecord> csvRecords = csvFileParser.getRecords();
+				for (int index = 1; index < csvRecords.size(); index++) {
+					ps.setInt(1, Integer.parseInt(csvRecords.get(index).get("ID")));
+					ps.setInt(2, Integer.parseInt(csvRecords.get(index).get("AGE")));
+					ps.setString(3, csvRecords.get(index).get("NAME").toString());
+					System.out.println(ps.toString());
 					ps.addBatch();
 				}
 				ps.executeBatch();
 			}
+			con.commit();
 			csvFileParser.close();
 		}
 	}
