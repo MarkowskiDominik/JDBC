@@ -1,8 +1,8 @@
 package jdbc.exercise;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -11,6 +11,10 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 import dnl.utils.text.table.TextTable;
 
@@ -80,5 +84,28 @@ public class Service {
 			rowIndex++;
 		}
 		return tableData;
+	}
+	
+	public void storeData(File file) throws ClassNotFoundException, SQLException, IOException {
+		Class.forName("com.mysql.jdbc.Driver");
+		try (Connection con = DriverManager
+				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
+
+			FileReader fileReader = new FileReader(file);
+			CSVFormat csvFileFormat = CSVFormat.DEFAULT.withHeader("ID", "AGE", "NAME");
+			CSVParser csvFileParser = new CSVParser(fileReader, csvFileFormat);
+	        
+			try (PreparedStatement ps = con.prepareStatement("INSERT INTO " + file.getName() + " (ID, AGE, NAME) VALUES(?, ?, ?)")) {
+				con.setAutoCommit(false);
+				for (CSVRecord csvRecord : csvFileParser.getRecords()) {
+					ps.setInt(1, Integer.parseInt(csvRecord.get("ID")));
+					ps.setString(2, csvRecord.get("AGE"));
+					ps.setString(3, csvRecord.get("NAME"));
+					ps.addBatch();
+				}
+				ps.executeBatch();
+			}
+			csvFileParser.close();
+		}
 	}
 }
