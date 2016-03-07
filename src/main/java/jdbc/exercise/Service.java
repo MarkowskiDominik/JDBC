@@ -6,6 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import dnl.utils.text.table.TextTable;
 
@@ -51,13 +54,22 @@ public class Service {
 	}
 
 	private Object[][] getTableData(ResultSet rs) throws SQLException {
-		Object tableData[][] = new Object[10][rs.getMetaData().getColumnCount()];
+		List<List<Object>> rowList = new ArrayList<List<Object>>();
 		int rowIndex = 0;
 		int columnCount = rs.getMetaData().getColumnCount();
 		while (rs.next()) {
+			List<Object> row = new ArrayList<Object>(columnCount);
 			for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
-				tableData[rowIndex][columnIndex-1] = rs.getObject(columnIndex);
+				row.add(rs.getObject(columnIndex));
 			}
+			rowList.add(row);
+			rowIndex++;
+		}
+		
+		Object[][] tableData = new Object[rowList.size()][columnCount];
+		rowIndex = 0;
+		for (List<Object> row: rowList) {
+			tableData[rowIndex] = row.toArray();
 			rowIndex++;
 		}
 		return tableData;

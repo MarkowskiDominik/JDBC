@@ -23,5 +23,6 @@ public class ServiceTest {
 		service.printTable("division", 1, -1);
 		service.printTable("employee", 1, -1);
 		service.printTable("project", 1, -1);
+		service.printTable("employee2project", 1, -1);
 	}
 }
