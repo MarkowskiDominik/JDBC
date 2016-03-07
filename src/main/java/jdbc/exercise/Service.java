@@ -1,5 +1,8 @@
 package jdbc.exercise;
 
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,7 +10,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import dnl.utils.text.table.TextTable;
@@ -32,8 +34,14 @@ public class Service {
 				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
 
 			TextTable textTable;
-			try (PreparedStatement ps = con.prepareStatement("select * from " + tabName)) {
-//				ps.setString(1, tabName);
+			try (PreparedStatement ps = con.prepareStatement("select * from " + tabName + " limit ? offset ?")) {
+				if (toRowIdx != -1) {
+					ps.setInt(1, toRowIdx);
+				}
+				else {
+					ps.setLong(1, Long.MAX_VALUE);
+				}
+				ps.setInt(2, fromRowIdx - 1);
 
 				try (ResultSet rs = ps.executeQuery()) {
 					textTable = new TextTable(getColumnHeader(rs), getTableData(rs));
@@ -41,7 +49,6 @@ public class Service {
 				}
 			}
 		}
-		
 	}
 
 	private String[] getColumnHeader(ResultSet rs) throws SQLException {
