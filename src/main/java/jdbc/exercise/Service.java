@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
+import dnl.utils.text.table.TextTable;
+
 public class Service {
 
 	private final String user;
@@ -21,37 +23,43 @@ public class Service {
 		this("root", "rhQQ2yxrkt92#cgm");
 	}
 
-	public void printTable(String tabName) throws ClassNotFoundException, SQLException {
+	public void printTable(String tabName, int fromRowIdx, int toRowIdx) throws ClassNotFoundException, SQLException {
 		Class.forName("com.mysql.jdbc.Driver");
 		try (Connection con = DriverManager
 				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
 
+			TextTable textTable;
 			try (PreparedStatement ps = con.prepareStatement("select * from " + tabName)) {
 //				ps.setString(1, tabName);
-				
+
 				try (ResultSet rs = ps.executeQuery()) {
-					printColumnHeader(rs);
-					printData(rs);
+					textTable = new TextTable(getColumnHeader(rs), getTableData(rs));
+					textTable.printTable();
 				}
 			}
 		}
+		
 	}
 
-	private void printColumnHeader(ResultSet rs) throws SQLException {
+	private String[] getColumnHeader(ResultSet rs) throws SQLException {
 		ResultSetMetaData rsmd = rs.getMetaData();
-		for (int j = 1; j <= rsmd.getColumnCount(); j++) {
-			System.out.print(rsmd.getColumnName(j));
-			System.out.print(" ");
-			System.out.println(rsmd.getColumnTypeName(j));
-		}		
+		String[] columnHeader = new String[rsmd.getColumnCount()]; 
+		for (int columnIndex = 1; columnIndex <= rsmd.getColumnCount(); columnIndex++) {
+			columnHeader[columnIndex-1] = rsmd.getColumnName(columnIndex);
+		}
+		return columnHeader;
 	}
 
-	private void printData(ResultSet rs) throws SQLException {
+	private Object[][] getTableData(ResultSet rs) throws SQLException {
+		Object tableData[][] = new Object[10][rs.getMetaData().getColumnCount()];
+		int rowIndex = 0;
+		int columnCount = rs.getMetaData().getColumnCount();
 		while (rs.next()) {
-			System.out.print(rs.getInt(1));
-			System.out.print(" ");
-			System.out.print(rs.getString(2));
-			System.out.println();
-		}		
+			for (int columnIndex = 1; columnIndex <= columnCount; columnIndex++) {
+				tableData[rowIndex][columnIndex-1] = rs.getObject(columnIndex);
+			}
+			rowIndex++;
+		}
+		return tableData;
 	}
 }

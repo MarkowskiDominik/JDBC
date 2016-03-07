@@ -20,6 +20,8 @@ public class ServiceTest {
 	
 	@Test
 	public void printTable() throws ClassNotFoundException, SQLException {
-		service.printTable("employee");
+		service.printTable("division", 1, -1);
+		service.printTable("employee", 1, -1);
+		service.printTable("project", 1, -1);
 	}
 }
