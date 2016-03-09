@@ -1,5 +1,6 @@
 package jdbc.exercise;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -10,11 +11,14 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+
+import com.mysql.fabric.xmlrpc.base.Array;
 
 import dnl.utils.text.table.TextTable;
 
@@ -90,24 +94,37 @@ public class Service {
 		try (Connection con = DriverManager
 				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
 
-			String tableName = file.getName().split("\\-|\\.")[1].toLowerCase();	        
-			CSVParser csvFileParser = new CSVParser(new FileReader(file), CSVFormat.MYSQL.withHeader("ID", "AGE", "NAME"));
+			String tableName = file.getName().split("\\-|\\.")[1].toLowerCase();
+			String headers = new BufferedReader(new FileReader(file)).readLine();
 			
-			try (PreparedStatement ps = con.prepareStatement("INSERT INTO " + tableName + " (ID, AGE, NAME) VALUES(?, ?, ?);")) {
+			CSVParser csvFileParser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader(headers.split(",")));
+			try (PreparedStatement ps = getStatementPattern(con, tableName, headers)) {
 				con.setAutoCommit(false);
 				
+				List<String> headersList = Arrays.asList(headers.split(","));
 				List<CSVRecord> csvRecords = csvFileParser.getRecords();
-				for (int index = 1; index < csvRecords.size(); index++) {
-					ps.setInt(1, Integer.parseInt(csvRecords.get(index).get("ID")));
-					ps.setInt(2, Integer.parseInt(csvRecords.get(index).get("AGE")));
-					ps.setString(3, csvRecords.get(index).get("NAME").toString());
+				
+				for (int row = 1; row < csvRecords.size(); row++) {
+					for (int column = 1; column <= headersList.size(); column++) {
+						ps.setObject(column, csvRecords.get(row).get(headersList.get(column-1)));
+					}
 					System.out.println(ps.toString());
 					ps.addBatch();
 				}
 				ps.executeBatch();
 			}
+			
 			con.commit();
 			csvFileParser.close();
 		}
+	}
+
+	private PreparedStatement getStatementPattern(Connection con, String tableName, String headers) throws SQLException {
+		String statement = "INSERT INTO " + tableName + " (" + headers + ") VALUES(?";
+		for (int index = 1; index < headers.split(",").length; index++) {
+			statement += ", ?";
+		}
+		statement += ");";
+		return con.prepareStatement(statement);
 	}
 }
