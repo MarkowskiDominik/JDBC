@@ -53,5 +53,18 @@ public class ServiceTest {
 	@Test
 	public void insertDataToTableFromCSV() throws ClassNotFoundException, SQLException, IOException {
 		service.storeData(new File("src\\test\\resources\\insert-MyTab.csv"));
+		service.printTable("mytab", 1, -1);
+	}
+	
+	@Test
+	public void insertDataToTableFromCSVSmallerNumberOfArgument() throws ClassNotFoundException, SQLException, IOException {
+		service.storeData(new File("src\\test\\resources\\insert2-MyTab.csv"));
+		service.printTable("mytab", 1, -1);
+	}
+
+	@Test
+	public void truncateTable() throws ClassNotFoundException, SQLException, IOException {
+		service.truncateTable("mytab");
+		service.printTable("mytab", 1, -1);
 	}
 }

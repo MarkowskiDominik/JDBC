@@ -18,8 +18,6 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import com.mysql.fabric.xmlrpc.base.Array;
-
 import dnl.utils.text.table.TextTable;
 
 public class Service {
@@ -95,7 +93,9 @@ public class Service {
 				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
 
 			String tableName = file.getName().split("\\-|\\.")[1].toLowerCase();
-			String headers = new BufferedReader(new FileReader(file)).readLine();
+			BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+			String headers = bufferedReader.readLine();
+			bufferedReader.close();
 			
 			CSVParser csvFileParser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withHeader(headers.split(",")));
 			try (PreparedStatement ps = getStatementPattern(con, tableName, headers)) {
@@ -116,6 +116,7 @@ public class Service {
 			
 			con.commit();
 			csvFileParser.close();
+			
 		}
 	}
 
@@ -126,5 +127,16 @@ public class Service {
 		}
 		statement += ");";
 		return con.prepareStatement(statement);
+	}
+	
+	public void truncateTable(String tableName) throws ClassNotFoundException, SQLException {
+		Class.forName("com.mysql.jdbc.Driver");
+		try (Connection con = DriverManager
+				.getConnection("jdbc:mysql://localhost/starter_kit?" + "user=" + user + "&password=" + password)) {
+
+			try (PreparedStatement ps = con.prepareStatement("truncate " + tableName)) {
+				ps.execute();
+			}
+		}
 	}
 }
